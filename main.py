@@ -2,13 +2,88 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 from random import randint
+import dlib
+face_detector = dlib.get_frontal_face_detector()
+landmark_detector = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+ParHist = 256
+ParRand = 400
+
 
 AImg = [
     [cv2.imread('./archive/s' + str(person) + '/' + str(img) + '.pgm', cv2.IMREAD_GRAYSCALE) for img in range(1, 11)]
     for person in range(1, 41)]
 
-ParHist = 256
-ParRand = 400
+faces = face_detector(AImg[0][0], 1)
+
+landmark_tuple = []
+
+for k, d in enumerate(faces):
+   landmarks = landmark_detector(AImg[0][0], d)
+   for n in range(0, 27):
+      x = landmarks.part(n).x
+      y = landmarks.part(n).y
+      landmark_tuple.append((x, y))
+#      cv2.circle(AImg[0][0], (x, y), 2, (255, 255, 0), -1)
+
+routes = []
+def Ulala(img):
+    landmark_tuple = []
+    for k, d in enumerate(faces):
+        landmarks = landmark_detector(img, d)
+        for n in range(0, 27):
+            x = landmarks.part(n).x
+            y = landmarks.part(n).y
+            landmark_tuple.append((x, y))
+            #cv2.circle(img, (x, y), 2, (255, 255, 0), -1)
+
+    routes = []
+
+    for i in range(10, 3, -1):
+        from_coordinate = landmark_tuple[i + 1]
+        to_coordinate = landmark_tuple[i]
+        routes.append(from_coordinate)
+
+    from_coordinate = landmark_tuple[4]
+    to_coordinate = landmark_tuple[14]
+    routes.append(from_coordinate)
+
+    for i in range(17, 20):
+        from_coordinate = landmark_tuple[i]
+        to_coordinate = landmark_tuple[i + 1]
+        routes.append(from_coordinate)
+
+    from_coordinate = landmark_tuple[19]
+    to_coordinate = landmark_tuple[24]
+    routes.append(from_coordinate)
+
+    for i in range(24, 26):
+        from_coordinate = landmark_tuple[i]
+        to_coordinate = landmark_tuple[i + 1]
+        routes.append(from_coordinate)
+
+    from_coordinate = landmark_tuple[26]
+    to_coordinate = landmark_tuple[12]
+    routes.append(from_coordinate)
+    routes.append(to_coordinate)
+
+    mask = np.zeros(img.shape[:2], dtype="uint8")
+    mask = cv2.fillConvexPoly(mask, np.array(routes), 1)
+    return cv2.bitwise_and(img, img, mask=mask)
+
+AImgMod = [[Ulala(img) for img in person] for person in AImg]
+
+#for i in range(0, 40):
+#    for j in range(0, 10):
+#        plt.imshow(AImgMod[i][j])
+#        plt.show()
+
+#AHist = [[cv2.calcHist([img], [0], None, [ParHist], [0, ParHist]) for img in person] for person in AImgMod]
+
+cv2.imshow("asd2", Ulala(AImgMod[0][0]))
+
+
+
+
 
 mask = np.zeros(AImg[0][0].shape[:2], dtype="uint8")
 for i in range(ParRand):
@@ -38,8 +113,6 @@ def Scale(img):
 
 
 ''',interpolation=cv2.INTER_NEAREST'''
-
-AHist = [[cv2.calcHist([img], [0], None, [ParHist], [0, ParHist]) for img in person] for person in AImg]
 
 AScale = [[Scale(img) for img in person] for person in AImg]
 
@@ -97,27 +170,27 @@ AHistInd = np.array([])
 
 for i in range(0, 40):
 #    AHistInd = np.append(AHistInd, 0)
-    min = []
-    for j in range(0, 10):
-        sum = 0
-        for k in range(0, 10):
-            sum += compare(AHist[i][j], AHist[i][k])
-        min = np.append(min, sum)
-        if j == 9:
-            result = 0
-
-            for l in range(len(min)):
-                if min[l] < min[result]:
-                    result = l
-
-            if len(AHistInd) == 0:
-                AScaleInd = [AScale[i][8]]
+#    min = []
+#    for j in range(0, 10):
+#        sum = 0
+#        for k in range(0, 10):
+#            sum += compare(AHist[i][j], AHist[i][k])
+#        min = np.append(min, sum)
+#        if j == 9:
+#            result = 0
+#
+#            for l in range(len(min)):
+#                if min[l] < min[result]:
+#                    result = l
+#
+    if len(AHistInd) == 0:
+        AScaleInd = [AScale[i][8]]
             #    AHistInd = [[AImg[i][result], AImg[i][9-result]]]
-                AHistInd = [[AImg[i][1], AImg[i][9]]]
+        AHistInd = [[AImgMod[i][0], AImgMod[i][1]]]
 
-            else:
-                AScaleInd = np.append(AScaleInd, [AScale[i][8]], axis=0)
-                AHistInd = np.append(AHistInd, [[AImg[i][1], AImg[i][9]]], axis=0)
+    else:
+        AScaleInd = np.append(AScaleInd, [AScale[i][8]], axis=0)
+        AHistInd = np.append(AHistInd, [[AImgMod[i][0], AImgMod[i][1]]], axis=0)
 
 
 tr = 0
@@ -128,7 +201,8 @@ for Bperson in range(0, 40):
         for person in range(0, 40):
             err = []
             for l in range(len(AHistInd[0])):
-                err = np.append(err, compare(cv2.calcHist([AHistInd[person][l]], [0], None, [ParHist], [0, ParHist]), AHist[Bperson][img]))
+                err = np.append(err, compare(cv2.calcHist([AHistInd[person][l]], [0], None, [ParHist], [0, ParHist])[1::],
+                                             cv2.calcHist([AImgMod[Bperson][img]], [0], None, [ParHist], [0, ParHist])[1::]))
             Amin = np.append(Amin, np.min(err))
 
         result = 0
@@ -141,85 +215,47 @@ for Bperson in range(0, 40):
         if result == Bperson:
             tr += 1
         else:
-
             err = []
             for l in range(len(AHistInd[0])):
-                err = np.append(err, compare(cv2.calcHist([AHistInd[result][l]], [0], None, [ParHist], [0, ParHist]), AHist[Bperson][img]))
+                err = np.append(err, compare(cv2.calcHist([AHistInd[result][l]], [0], None, [ParHist], [0, ParHist])[1::],
+                                             cv2.calcHist([AImgMod[Bperson][img]], [0], None, [ParHist], [0, ParHist])[1::]))
             index = np.where(err == np.min(err))[0][0]
             print(index)
 
             plt.figure()
             plt.title("TEST IMAGE")
-            plt.imshow(AImg[Bperson][img], cmap='gray')
+            plt.imshow(AImgMod[Bperson][img], cmap='gray')
             plt.figure()
             plt.title("FALSE ETALON")
             plt.imshow(AHistInd[result][index], cmap='gray')
-
             plt.figure()
-            plt.title("TEST IMAGE")
-            plt.imshow(AImg[Bperson][img], cmap='gray')
-            plt.figure()
-            plt.title("FALSE ETALON")
-            plt.imshow(AHistInd[result][index], cmap='gray')
-
+            plt.title("TRUE ETALON")
+            plt.imshow(AHistInd[Bperson][0], cmap='gray')
 
             plt.figure()
             plt.title("FALSE ETALON")
             plt.xlabel("Bins")
             plt.ylabel("# of Pixels")
-            plt.plot(cv2.calcHist([AHistInd[result][index]], [0], None, [ParHist], [0, ParHist]))
+            plt.plot(cv2.calcHist([AHistInd[result][index]], [0], None, [ParHist], [0, ParHist])[1::])
             plt.xlim([0, 256])
             plt.ylim([0, 150])
 
             plt.figure()
+            plt.title("TRUE ETALON")
+            plt.xlabel("Bins")
+            plt.ylabel("# of Pixels")
+            plt.plot(cv2.calcHist([AHistInd[Bperson][0]], [0], None, [ParHist], [0, ParHist])[1::])
+            plt.xlim([0, 256])
+            plt.ylim([0, 150])
+
+
+            plt.figure()
             plt.title("TEST IMAGE")
             plt.xlabel("Bins")
             plt.ylabel("# of Pixels")
-            plt.plot(cv2.calcHist([AImg[Bperson][img]], [0], None, [ParHist], [0, ParHist]))
+            plt.plot(cv2.calcHist([AImgMod[Bperson][img]], [0], None, [ParHist], [0, ParHist])[1::])
             plt.xlim([0, 256])
             plt.ylim([0, 150])
             plt.show()
 
-
-
 print((tr - 40*len(AHistInd[0])) / 360 * 100)
-
-
-tr=0
-
-for Bperson in range(0, 40):
-    for img in range(0, 10):
-        Amin = np.array([])
-        for person in range(0, 40):
-            err = compare(AScale[person][1], AScale[Bperson][img])
-            Amin = np.append(Amin, err)
-
-        result = 0
-        for i in range(len(Amin)):
-            if Amin[i] < Amin[result]:
-                result = i
-        print(str(Bperson + 1) + " recogn. as " + str(result + 1))
-
-
-        if result == Bperson:
-            tr += 1
-print((tr - 40 ) / 360 * 100)
-
-tr = 0
-
-for Bperson in range(0, 40):
-    for img in range(0, 10):
-        Amin = np.array([])
-        for person in range(0, 40):
-            err = compare(ARand[person][1], ARand[Bperson][img])
-            Amin = np.append(Amin, err)
-
-        result = 0
-        for i in range(len(Amin)):
-            if Amin[i] < Amin[result]:
-                result = i
-        print(str(Bperson + 1) + " recogn. as " + str(result + 1))
-
-        if result == Bperson:
-            tr += 1
-print((tr - 40) / 360 * 100)
