@@ -10,6 +10,14 @@ ParHist = 256
 ParRand = 300
 ratio = 0.5
 
+AInd = np.array([])
+for i in range(0, 40):
+    if len(AInd) == 0:
+        AInd = [[AImg[i][1], AImg[i][7]]]           # Scale 8
+    else:
+        AInd = np.append(AInd, [[AImg[i][1], AImg[i][7]]], axis=0)
+
+
 mask = np.zeros(AImg[0][0].shape[:2], dtype="uint8")
 for i in range(ParRand):
     mask[randint(0, 111)][randint(0, 91)] = 255
@@ -34,16 +42,6 @@ def compare(h1, h2, comp_method):
     return diff_sum
 
 
-AHistInd = np.array([])
-for i in range(0, 40):
-    if len(AHistInd) == 0:
-        AHistInd = [[AImg[i][1], AImg[i][7]]]           # Scale 8
-    else:
-        AHistInd = np.append(AHistInd, [[AImg[i][1], AImg[i][7]]], axis=0)
-
-tr = 0
-
-
 def select_method(meth_num, img):
     if meth_num == 0:
         return scale(img)
@@ -66,9 +64,9 @@ for method in range(3):
             Amin = [[0] * 10 for i in range(40)]
             for person in range(0, 40):
                 err = []
-                for reference in range(len(AHistInd[0])):
+                for reference in range(len(AInd[0])):
                     err = np.append(err, compare(
-                        select_method(method, AHistInd[person][reference]),
+                        select_method(method, AInd[person][reference]),
                         select_method(method, AImg[Bperson][img]), 0))
                 Amin[person] = [np.min(err), np.argmin(err)]
 
@@ -81,22 +79,19 @@ for method in range(3):
             if result == Bperson:
                 tr += 1
             else:
-                err = []
-
                 fig = plt.figure(figsize=(12, 8))
                 columns = 3
                 rows = 2
 
-
                 # ax enables access to manipulate each of subplots
                 ax = []
-                arr = [AImg[Bperson][img], AHistInd[Bperson][0], AHistInd[result][Amin[result][1]]]
+                arr = [AImg[Bperson][img], AInd[Bperson][0], AInd[result][Amin[result][1]]]
 
                 arr_name = ["TRUE ETALON", "TEST IMAGE", "FALSE ETALON"]
                 arr_type_name = ["Scale", "Hist", "Random"]
                 arr_plot = [cv2.calcHist([AImg[Bperson][img]], [0], None, [ParHist], [0, ParHist]),
-                            cv2.calcHist([AHistInd[Bperson][0]], [0], None, [ParHist], [0, ParHist]),
-                            cv2.calcHist([AHistInd[result][Amin[result][1]]], [0], None, [ParHist], [0, ParHist])]
+                            cv2.calcHist([AInd[Bperson][0]], [0], None, [ParHist], [0, ParHist]),
+                            cv2.calcHist([AInd[result][Amin[result][1]]], [0], None, [ParHist], [0, ParHist])]
 
                 for i in range(columns):
                     ax.append(fig.add_subplot(rows, columns, i + 1))
@@ -114,4 +109,4 @@ for method in range(3):
                 plt.suptitle(arr_type_name[method], fontsize=16)
                 plt.show()
 
-    print((tr - 40*len(AHistInd[0])) / (400 - 40*len(AHistInd[0])) * 100)
+    print((tr - 40*len(AInd[0])) / (400 - 40*len(AInd[0])) * 100)
