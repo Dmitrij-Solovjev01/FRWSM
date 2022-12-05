@@ -13,7 +13,7 @@ ATitleNames = ["Sourse images(Test image)", "Scale images(Ans. 1)", "Histogram i
 
 AImg = []
 AWrongAns = []
-AImageRefer = np.array([])
+AImageRefer = []
 ImageMask = []
 
 fig = plt.figure(figsize=(12, 8))
@@ -23,6 +23,8 @@ rows = 4
 ParHist = 256
 ParRand = 300
 ratio = 0.5
+CompareMethod = 0
+AIndexRef = [1, 8]
 
 NumOfPerson = 10
 CorrAnswCount = [0, 0, 0, 0]
@@ -37,12 +39,14 @@ def prepare():
         ImageMask[randint(0, 111)][randint(0, 91)] = 255
 
     for i in range(0, 40):
+        Ahelp = []
+        for j in range(len(AIndexRef)):
+            Ahelp.append((AImg[i][AIndexRef[j]]))
+
         if len(AImageRefer) == 0:
-            AImageRefer = [[AImg[i][1], AImg[i][8]]]
-            # [[AImg[i][1]]]
+            AImageRefer = [Ahelp]
         else:
-            AImageRefer = np.append(AImageRefer, [[AImg[i][1], AImg[i][8]]], axis=0)
-            # np.append(AImageRefer, [[AImg[i][1]]], axis=0)
+            AImageRefer = np.append(AImageRefer, [Ahelp], axis=0)
 
 def scale(img):
     return np.array(cv2.resize(img, (0, 0), fx=ratio, fy=ratio)).flatten()
@@ -91,28 +95,35 @@ def change_image(img, method):
 
 class Index:
     ind = 0
+    hax = []
+    NotFirst = 0
+
     def draw(self, arr):
-        hax = []
+        self.hax = []
 
         for img in range(len(arr)):
             if img == 10 or img == 12 or img == 14:
-                hax.append(fig.add_subplot(rows, columns, img + 1))
-                hax[img].set_title(ATitleNames[img])
-                hax[img].plot(np.arange(256), arr[img], color="green")
+                self.hax.append(fig.add_subplot(rows, columns, img + 1))
+                self.hax[img].set_title(ATitleNames[img])
+                self.hax[img].plot(np.arange(256), arr[img], color="green")
             else:
-                hax.append(fig.add_subplot(rows, columns, img + 1))
-                hax[img].set_title(ATitleNames[img])  # set title
+                self.hax.append(fig.add_subplot(rows, columns, img + 1))
+                self.hax[img].set_title(ATitleNames[img])  # set title
                 plt.axis('off')
                 plt.imshow(arr[img], alpha=1, cmap='gray')
 
         fig.canvas.draw_idle()
 
     def next(self, event):
+        for i in range(16):
+            self.hax[i]
+
         self.ind += 1
         self.ind = self.ind % len(AWrongAns)
         self.draw(AWrongAns[self.ind])
 
     def prev(self, event):
+
         self.ind -= 1
         self.ind = self.ind % len(AWrongAns)
         self.draw(AWrongAns[self.ind])
@@ -133,7 +144,7 @@ def main():
                     for reference in range(len(AImageRefer[0])):
                         err = np.append(err, compare(
                             select_method(method, AImageRefer[person][reference]),
-                            select_method(method, AImg[Bperson][img]), 0))
+                            select_method(method, AImg[Bperson][img]), CompareMethod))
                     Amin[person] = [np.min(err), np.argmin(err)]
 
                 AminDistance = np.array(Amin).transpose()[0]
