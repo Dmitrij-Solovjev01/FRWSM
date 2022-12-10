@@ -5,11 +5,10 @@ from random import randint
 from collections import Counter
 from matplotlib.widgets import Button
 
-ATitleNames = ["Sourse images(Test image)", "Scale images(Ans. 1)", "Histogram images(Ans. 1)",
-            "Random point images(Ans. 1)",
+ATitleNames = ["Sourse images\nTest image", "Scale images\nAns. 1", "Histogram images\nAns. 1", "Random point images\nAns. 1",
             "Correct answer", "Ans. 2", "Ans. 2", "Ans. 2",
             "Scaled Test image", "Scaled Ans. 1", "Сalculated Hist. Ans. 1", "Random ImageMask Ans. 1",
-            "Сalculated Hist. Test image", "Scaled Ans. 2", "Сalculated Hist. Ans. 2", "Random ImageMask Ans. 2"]
+            " \nСalculated Hist. Test image", " \nScaled Ans. 2", " \nСalculated Hist. Ans. 2", " \nRandom ImageMask Ans. 2"]
 
 AImg = []
 AWrongAns = []
@@ -107,20 +106,20 @@ class Index:
     NotFirst = 0
 
     def draw(self, arr):
-        #for i in range(len(arr)):
-        #    if len(self.hax) >= 16:
-        #        self.hax[i].clear()
         self.hax = []
 
         for img in range(len(arr)):
-            if len(self.hax) >= 16:
-                self.hax[img].remove()
+#            if len(self.hax) >= 16:
+#                self.hax[img].remove()
 
             if img == 10 or img == 12 or img == 14:
                 self.hax.append(fig.add_subplot(rows, columns, img + 1))
                 self.hax[img].set_title(ATitleNames[img])
                 plt.xlim([0, 256])
                 plt.ylim([0, 150])
+                if img == 10:
+                    self.hax[img].axes.get_xaxis().set_visible(False)
+
                 self.hax[img].plot(np.arange(256), arr[img], color="green")
             else:
                 self.hax.append(fig.add_subplot(rows, columns, img + 1))
@@ -131,15 +130,11 @@ class Index:
         fig.canvas.draw_idle()
 
     def next(self, event):
-        for i in range(16):
-            self.hax[i]
-
         self.ind += 1
         self.ind = self.ind % len(AWrongAns)
         self.draw(AWrongAns[self.ind])
 
     def prev(self, event):
-
         self.ind -= 1
         self.ind = self.ind % len(AWrongAns)
         self.draw(AWrongAns[self.ind])
@@ -223,14 +218,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-'''
-93.75
-90.0
-93.75
-93.75
-
-'''
