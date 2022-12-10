@@ -90,21 +90,37 @@ def change_image(img, method):
     elif method == 1:
         return select_method(1, img)
     else:
-        return cv2.bitwise_and(img, img, mask=ImageMask)
+        mask = cv2.bitwise_not(ImageMask)
+        backtorgb = cv2.cvtColor(cv2.bitwise_and(img, img, mask=mask), cv2.COLOR_GRAY2RGB)
+
+        (B, G, R) = cv2.split(backtorgb)
+
+        G = G + ImageMask
+        R = R + ImageMask
+
+        return cv2.merge((R, G, B))
+#        return cv2.bitwise_and(img, img, mask=ImageMask)
 
 
 class Index:
     ind = 0
-    hax = []
     NotFirst = 0
 
     def draw(self, arr):
+        #for i in range(len(arr)):
+        #    if len(self.hax) >= 16:
+        #        self.hax[i].clear()
         self.hax = []
 
         for img in range(len(arr)):
+            if len(self.hax) >= 16:
+                self.hax[img].remove()
+
             if img == 10 or img == 12 or img == 14:
                 self.hax.append(fig.add_subplot(rows, columns, img + 1))
                 self.hax[img].set_title(ATitleNames[img])
+                plt.xlim([0, 256])
+                plt.ylim([0, 150])
                 self.hax[img].plot(np.arange(256), arr[img], color="green")
             else:
                 self.hax.append(fig.add_subplot(rows, columns, img + 1))
@@ -192,6 +208,7 @@ def main():
               (NumOfPerson * 10 - NumOfPerson * len(AImageRefer[0])) * 100)
 
     callback = Index()
+
     axes = plt.axes([0.81, 0.000001, 0.1, 0.075])
     bnext = Button(axes, 'Next', color="gray")
     bnext.on_clicked(callback.next)
@@ -200,8 +217,20 @@ def main():
     bprev = Button(axes, 'Prev', color="gray")
     bprev.on_clicked(callback.prev)
 
+
     callback.draw(AWrongAns[0])
     plt.show()
 
 if __name__ == "__main__":
     main()
+
+
+
+
+'''
+93.75
+90.0
+93.75
+93.75
+
+'''
